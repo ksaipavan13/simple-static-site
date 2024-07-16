@@ -1,0 +1,12 @@
+{
+  "name": "simple-static-site",
+  "version": "1.0.0",
+  "description": "A simple static site",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Starting application...'"
+  },
+  "author": "",
+  "license": "ISC"
+}
+
