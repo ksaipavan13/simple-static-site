@@ -1,6 +1,12 @@
 name: CI/CD Pipeline
 
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to use for deployment'
+        required: true
+        default: 'v1.0.0'
   push:
     tags:
       - 'v*.*.*'
@@ -17,6 +23,5 @@ jobs:
       run: |
         echo "Deploying to production..."
         # Add your actual deployment steps here
-        # Example: scp index.html user@server:/path/to/deploy
         echo "Application deployed!"
 
