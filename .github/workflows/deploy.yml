@@ -6,6 +6,9 @@ on:
       commit_id:
         description: 'Commit ID to deploy'
         required: true
+  push:
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -28,13 +31,24 @@ jobs:
     - name: Run tests
       run: npm test
 
-    - name: Create and push tag
+    - name: Get version from package.json
+      id: get_version
+      run: |
+        VERSION=$(jq -r '.version' package.json)
+        echo "::set-output name=version::$VERSION"
+
+    - name: Create a new tag
       id: create_tag
-      uses: mathieudutour/github-tag-action@v6.0
-      with:
+      env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
-        tag_prefix: "v"
-        create_annotated_tag: true
+      run: |
+        TAG="v${{ steps.get_version.outputs.version }}"
+        echo "New tag will be $TAG"
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git tag $TAG
+        git push https://${GITHUB_TOKEN}@github.com/ksaipavan13/simple-static-site.git $TAG
+        echo "::set-output name=tag::$TAG"
 
     - name: Create GitHub Release
       id: create_release
@@ -42,8 +56,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
-        tag_name: ${{ steps.create_tag.outputs.new_tag }}
-        release_name: Release ${{ steps.create_tag.outputs.new_tag }}
+        tag_name: ${{ steps.create_tag.outputs.tag }}
+        release_name: Release ${{ steps.create_tag.outputs.tag }}
         draft: false
         prerelease: false
 
