@@ -44,7 +44,7 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git tag $TAG
-        git remote add origin-authenticated https://${{ secrets.PAT }}@github.com/ksaipavan13/simple-static-site.git
+        git remote add origin-authenticated https://x-access-token:${{ secrets.PAT }}@github.com/ksaipavan13/simple-static-site.git
         git push origin-authenticated $TAG
 
     - name: Create GitHub Release
@@ -52,8 +52,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
-        tag_name: ${{ steps.get_version.outputs.version }}
-        release_name: Release ${{ steps.get_version.outputs.version }}
+        tag_name: ${{ steps.create_tag.outputs.tag }}
+        release_name: Release ${{ steps.create_tag.outputs.tag }}
         draft: false
         prerelease: false
 
