@@ -6,9 +6,6 @@ on:
       commit_id:
         description: 'Commit ID to deploy'
         required: true
-  push:
-    branches:
-      - main
 
 jobs:
   deploy:
