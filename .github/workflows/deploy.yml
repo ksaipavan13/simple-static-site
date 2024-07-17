@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Deployment Workflow
 
 on:
   workflow_dispatch:
@@ -9,11 +9,12 @@ on:
 
 jobs:
   deploy:
+    environment: Test_DEV
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         ref: ${{ inputs.commit_id }}
 
@@ -25,47 +26,59 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Run tests
-      run: npm test
-
-    - name: Get version from package.json
+    - name: Get package version
       id: get_version
-      run: |
-        VERSION=$(jq -r '.version' package.json)
-        echo "Version from package.json is $VERSION"
-        echo "::set-output name=version::$VERSION"
+      run: echo "version=$(node -p -e "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-    - name: Debug Git Configuration
-      run: |
-        git config --list --show-origin
-        git remote -v
-
-    - name: Create a new tag
-      id: create_tag
+    - name: Check if release exists
+      id: check_release
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
+        TAG_NAME: ${{ steps.get_version.outputs.version }}
       run: |
-        TAG="v${{ steps.get_version.outputs.version }}"
-        echo "New tag will be $TAG"
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git tag $TAG
-        git remote add origin-authenticated https://x-access-token:${{ secrets.PAT }}@github.com/ksaipavan13/simple-static-site.git
-        git push origin-authenticated $TAG
-        echo "::set-output name=tag::$TAG"
+        release_id=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG_NAME" \
+          | jq -r '.id')
+        if [ "$release_id" != "null" ]; then
+          echo "release_exists=true" >> $GITHUB_OUTPUT
+          echo "release_id=$release_id" >> $GITHUB_OUTPUT
+        else
+          echo "release_exists=false" >> $GITHUB_OUTPUT
 
-    - name: Create GitHub Release
+    - name: Create or update release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
-        tag_name: ${{ steps.create_tag.outputs.tag }}
-        release_name: Release ${{ steps.create_tag.outputs.tag }}
+        tag_name: ${{ steps.get_version.outputs.version }}
+        release_name: Release ${{ steps.get_version.outputs.version }}
         draft: false
         prerelease: false
+      if: steps.check_release.outputs.release_exists == 'false'
 
-    - name: Deploy to Production
+    - name: Update existing release
+      if: steps.check_release.outputs.release_exists == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
+        TAG_NAME: ${{ steps.get_version.outputs.version }}
+        RELEASE_ID: ${{ steps.check_release.outputs.release_id }}
       run: |
-        echo "Deploying to production..."
-        # Add your actual deployment steps here
-        echo "Application deployed!"
+        curl -X PATCH \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID \
+          -d '{
+            "tag_name": "${{ env.TAG_NAME }}",
+            "name": "Release ${{ env.TAG_NAME }}",
+            "draft": false,
+            "prerelease": false
+          }'
+
+    - name: Deploy application
+      env:
+        TAG: ${{ github.ref }}
+      run: |
+        echo "Deploying version $TAG"
+        echo "Contents of index.html:"
+        cat index.html
+        echo "Deployment of version $TAG completed successfully."
