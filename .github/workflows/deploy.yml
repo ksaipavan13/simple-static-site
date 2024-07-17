@@ -42,8 +42,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
-        tag_name: ${{ steps.create_tag.outputs.tag }}
-        release_name: Release ${{ steps.create_tag.outputs.tag }}
+        tag_name: ${{ steps.create_tag.outputs.new_tag }}
+        release_name: Release ${{ steps.create_tag.outputs.new_tag }}
         draft: false
         prerelease: false
 
