@@ -30,13 +30,15 @@ jobs:
 
     - name: Create a new tag
       id: create_tag
+      env:
+        GITHUB_TOKEN: ${{ secrets.PAT }}
       run: |
         TAG="v$(date +'%Y%m%d%H%M%S')"
         echo "New tag will be $TAG"
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git tag $TAG
-        git push https://${{ secrets.PAT }}@github.com/ksaipavan13/simple-static-site.git $TAG
+        git push https://${GITHUB_TOKEN}@github.com/ksaipavan13/simple-static-site.git $TAG
         echo "::set-output name=tag::$TAG"
 
     - name: Create GitHub Release
