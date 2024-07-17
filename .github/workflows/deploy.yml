@@ -32,6 +32,7 @@ jobs:
       id: get_version
       run: |
         VERSION=$(jq -r '.version' package.json)
+        echo "Version from package.json is $VERSION"
         echo "::set-output name=version::$VERSION"
 
     - name: Create a new tag
@@ -43,15 +44,16 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git tag $TAG
-        git push https://${{ secrets.PAT }}@github.com/ksaipavan13/simple-static-site.git $TAG
+        git remote add origin-authenticated https://${{ secrets.PAT }}@github.com/ksaipavan13/simple-static-site.git
+        git push origin-authenticated $TAG
 
     - name: Create GitHub Release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
-        tag_name: ${{ steps.create_tag.outputs.tag }}
-        release_name: Release ${{ steps.create_tag.outputs.tag }}
+        tag_name: ${{ steps.get_version.outputs.version }}
+        release_name: Release ${{ steps.get_version.outputs.version }}
         draft: false
         prerelease: false
 
