@@ -1,6 +1,6 @@
 {
   "name": "simple-static-site",
-  "version": "1.0.8",
+  "version": "1.0.7",
   "description": "A simple static site",
   "main": "index.html",
   "scripts": {
