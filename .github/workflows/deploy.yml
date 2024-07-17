@@ -3,13 +3,9 @@ name: CI/CD Pipeline
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Tag to use for deployment'
+      commit_id:
+        description: 'Commit ID to deploy'
         required: true
-        default: 'v1.0.0'
-  push:
-    tags:
-      - 'v*.*.*'
 
 jobs:
   deploy:
@@ -18,21 +14,22 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-
-    - name: Create GitHub Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
+        ref: ${{ inputs.commit_id }}
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests
+      run: npm test
 
     - name: Deploy to Production
       run: |
         echo "Deploying to production..."
         # Add your actual deployment steps here
         echo "Application deployed!"
-
