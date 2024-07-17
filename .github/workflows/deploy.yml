@@ -36,6 +36,7 @@ jobs:
         echo "::set-output name=version::$VERSION"
 
     - name: Create a new tag
+      id: create_tag
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
       run: |
@@ -46,6 +47,7 @@ jobs:
         git tag $TAG
         git remote add origin-authenticated https://x-access-token:${{ secrets.PAT }}@github.com/ksaipavan13/simple-static-site.git
         git push origin-authenticated $TAG
+        echo "::set-output name=tag::$TAG"
 
     - name: Create GitHub Release
       uses: actions/create-release@v1
