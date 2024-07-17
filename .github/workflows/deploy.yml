@@ -28,6 +28,28 @@ jobs:
     - name: Run tests
       run: npm test
 
+    - name: Create a new tag
+      id: create_tag
+      run: |
+        TAG="v$(date +'%Y%m%d%H%M%S')"
+        echo "New tag will be $TAG"
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git tag $TAG
+        git push origin $TAG
+        echo "::set-output name=tag::$TAG"
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.create_tag.outputs.tag }}
+        release_name: Release ${{ steps.create_tag.outputs.tag }}
+        draft: false
+        prerelease: false
+
     - name: Deploy to Production
       run: |
         echo "Deploying to production..."
