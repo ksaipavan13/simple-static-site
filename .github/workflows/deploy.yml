@@ -35,6 +35,11 @@ jobs:
         echo "Version from package.json is $VERSION"
         echo "::set-output name=version::$VERSION"
 
+    - name: Debug Git Configuration
+      run: |
+        git config --list --show-origin
+        git remote -v
+
     - name: Create a new tag
       id: create_tag
       env:
