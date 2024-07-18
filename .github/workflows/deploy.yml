@@ -29,7 +29,7 @@ on:
       deploy:
         description: 'Deploy the application'
         required: false
-        default: 'false'
+        default: 'true'  # Change default to 'true'
 
 jobs:
   deploy:
