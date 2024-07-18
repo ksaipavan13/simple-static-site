@@ -29,82 +29,82 @@ on:
       deploy:
         description: 'Deploy the application'
         required: false
-        default: 'true'  # Change default to 'true'
+        default: 'true'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-      with:
-        ref: ${{ github.event.inputs.commit_id || github.sha }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.inputs.commit_id || github.sha }}
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Run tests
-      run: npm test
+      - name: Run tests
+        run: npm test
 
-    - name: Get version from package.json
-      id: get_version
-      run: |
-        VERSION=$(jq -r '.version' package.json)
-        echo "version=$VERSION" >> $GITHUB_ENV
+      - name: Get version from package.json
+        id: get_version
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "version=$VERSION" >> $GITHUB_ENV
 
-    - name: Conditionally Create and Push Tag
-      if: ${{ github.event.inputs.create_tag == 'true' }}
-      id: create_tag
-      uses: mathieudutour/github-tag-action@v6.0
-      with:
-        github_token: ${{ secrets.PAT }}
-        tag_prefix: "v"
-        create_annotated_tag: true
+      - name: Conditionally Create and Push Tag
+        if: ${{ github.event.inputs.create_tag == 'true' }}
+        id: create_tag
+        uses: mathieudutour/github-tag-action@v6.0
+        with:
+          github_token: ${{ secrets.PAT }}
+          tag_prefix: "v"
+          create_annotated_tag: true
 
-    - name: Conditionally Create GitHub Release
-      if: ${{ github.event.inputs.create_tag == 'true' }}
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
-      with:
-        tag_name: ${{ env.version }}
-        release_name: Release ${{ env.version }}
-        draft: false
-        prerelease: false
+      - name: Conditionally Create GitHub Release
+        if: ${{ github.event.inputs.create_tag == 'true' }}
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        with:
+          tag_name: ${{ env.version }}
+          release_name: Release ${{ env.version }}
+          draft: false
+          prerelease: false
 
-    - name: Create GitHub Deployment
-      if: ${{ github.event.inputs.deploy == 'true' }}
-      id: create_deployment
-      uses: octokit/request-action@v2.x
-      with:
-        route: POST /repos/${{ github.repository }}/deployments
-        ref: ${{ github.event.inputs.commit_id || github.sha }}
-        environment: Test_DEV
-        description: 'Deployment initiated by GitHub Actions'
-        auto_merge: false
-        required_contexts: []
+      - name: Create GitHub Deployment
+        if: ${{ github.event.inputs.deploy == 'true' }}
+        id: create_deployment
+        uses: octokit/request-action@v2.x
+        with:
+          route: POST /repos/${{ github.repository }}/deployments
+          ref: ${{ github.event.inputs.commit_id || github.sha }}
+          environment: Test_DEV
+          description: 'Deployment initiated by GitHub Actions'
+          auto_merge: false
+          required_contexts: []
 
-    - name: Deploy to Production
-      if: ${{ github.event.inputs.deploy == 'true' }}
-      run: |
-        echo "Deploying to production..."
-        # Add your actual deployment steps here
-        echo "Deployment command executed successfully"
-        echo "Application deployed!"
+      - name: Deploy to Production
+        if: ${{ github.event.inputs.deploy == 'true' }}
+        run: |
+          echo "Deploying to production..."
+          # Add your actual deployment steps here
+          echo "Deployment command executed successfully"
+          echo "Application deployed!"
 
-    - name: Update GitHub Deployment Status
-      if: ${{ github.event.inputs.deploy == 'true' }}
-      uses: octokit/request-action@v2.x
-      with:
-        route: POST /repos/${{ github.repository }}/deployments/${{ steps.create_deployment.outputs.deployment_id }}/statuses
-        state: success
-        environment_url: 'https://your-app-url.com' # Replace with your app URL
-        log_url: ${{ github.run_url }}
-        description: 'Deployment completed successfully'
+      - name: Update GitHub Deployment Status
+        if: ${{ github.event.inputs.deploy == 'true' }}
+        uses: octokit/request-action@v2.x
+        with:
+          route: POST /repos/${{ github.repository }}/deployments/${{ steps.create_deployment.outputs.deployment_id }}/statuses
+          state: success
+          environment_url: 'https://your-app-url.com' # Replace with your app URL
+          log_url: ${{ github.run_url }}
+          description: 'Deployment completed successfully'
