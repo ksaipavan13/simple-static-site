@@ -1,6 +1,14 @@
 name: CI/CD Pipeline
 
 on:
+  push:
+    branches:
+      - main
+      - update-version
+  pull_request:
+    branches:
+      - main
+      - update-version
   workflow_dispatch:
     inputs:
       commit_id:
@@ -15,7 +23,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
       with:
-        ref: ${{ inputs.commit_id }}
+        ref: ${{ github.event.inputs.commit_id || github.sha }}
 
     - name: Set up Node.js
       uses: actions/setup-node@v2
@@ -28,11 +36,12 @@ jobs:
     - name: Run tests
       run: npm test
 
-    - name: Get package version
+    - name: Get version from package.json
       id: get_version
       run: |
-        VERSION=$(node -p -e "require('./package.json').version")
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        VERSION=$(jq -r '.version' package.json)
+        echo "Version from package.json is $VERSION"
+        echo "::set-output name=version::$VERSION"
 
     - name: Create and push tag
       id: create_tag
