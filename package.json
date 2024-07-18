@@ -1,6 +1,6 @@
 {
   "name": "simple-static-site",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "description": "A simple static site",
   "main": "index.html",
   "scripts": {
@@ -9,4 +9,3 @@
   "author": "",
   "license": "ISC"
 }
-
