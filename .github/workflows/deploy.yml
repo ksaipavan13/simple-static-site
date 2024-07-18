@@ -40,17 +40,15 @@ jobs:
       id: get_version
       run: |
         VERSION=$(jq -r '.version' package.json)
-        echo "Version from package.json is $VERSION"
-        echo "::set-output name=version::$VERSION"
+        echo "version=$VERSION" >> $GITHUB_ENV
 
     - name: Create and push tag
       id: create_tag
       uses: mathieudutour/github-tag-action@v6.0
       with:
-        GITHUB_TOKEN: ${{ secrets.PAT }}
+        github_token: ${{ secrets.PAT }}
         tag_prefix: "v"
         create_annotated_tag: true
-        tag: ${{ steps.get_version.outputs.version }}
 
     - name: Create GitHub Release
       id: create_release
@@ -58,8 +56,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
-        tag_name: ${{ steps.create_tag.outputs.new_tag }}
-        release_name: Release ${{ steps.create_tag.outputs.new_tag }}
+        tag_name: ${{ env.version }}
+        release_name: Release ${{ env.version }}
         draft: false
         prerelease: false
 
