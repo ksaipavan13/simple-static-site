@@ -1,6 +1,14 @@
 name: CI/CD Pipeline
 
 on:
+  push:
+    branches:
+      - main
+      - update-version
+  pull_request:
+    branches:
+      - main
+      - update-version
   workflow_dispatch:
     inputs:
       commit_id:
@@ -15,7 +23,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
       with:
-        ref: ${{ inputs.commit_id }}
+        ref: ${{ github.event.inputs.commit_id || github.sha }}
 
     - name: Set up Node.js
       uses: actions/setup-node@v2
@@ -35,27 +43,23 @@ jobs:
         echo "Version from package.json is $VERSION"
         echo "::set-output name=version::$VERSION"
 
-    - name: Create a new tag
+    - name: Create and push tag
       id: create_tag
-      env:
+      uses: mathieudutour/github-tag-action@v6.0
+      with:
         GITHUB_TOKEN: ${{ secrets.PAT }}
-      run: |
-        TAG="v${{ steps.get_version.outputs.version }}"
-        echo "New tag will be $TAG"
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git tag $TAG
-        git remote add origin-authenticated https://x-access-token:${{ secrets.PAT }}@github.com/ksaipavan13/simple-static-site.git
-        git push origin-authenticated $TAG
-        echo "::set-output name=tag::$TAG"
+        tag_prefix: "v"
+        create_annotated_tag: true
+        tag: ${{ steps.get_version.outputs.version }}
 
     - name: Create GitHub Release
+      id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.PAT }}
       with:
-        tag_name: ${{ steps.create_tag.outputs.tag }}
-        release_name: Release ${{ steps.create_tag.outputs.tag }}
+        tag_name: ${{ steps.create_tag.outputs.new_tag }}
+        release_name: Release ${{ steps.create_tag.outputs.new_tag }}
         draft: false
         prerelease: false
 
