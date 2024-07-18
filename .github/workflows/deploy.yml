@@ -89,7 +89,6 @@ jobs:
           environment: Test_DEV
           description: 'Deployment initiated by GitHub Actions'
           auto_merge: false
-          required_contexts: []
 
       - name: Deploy to Production
         if: ${{ github.event.inputs.deploy == 'true' }}
