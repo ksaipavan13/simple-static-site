@@ -4,16 +4,32 @@ on:
   push:
     branches:
       - main
+      - test
+      - feature-branch-1
+      - ksaipavan13-patch-1
+      - ksaipavan13-patch-2
       - update-version
   pull_request:
     branches:
       - main
+      - test
+      - feature-branch-1
+      - ksaipavan13-patch-1
+      - ksaipavan13-patch-2
       - update-version
   workflow_dispatch:
     inputs:
       commit_id:
         description: 'Commit ID to deploy'
         required: true
+      create_tag:
+        description: 'Create a new tag'
+        required: false
+        default: 'false'
+      deploy:
+        description: 'Deploy the application'
+        required: false
+        default: 'false'
 
 jobs:
   deploy:
@@ -42,7 +58,8 @@ jobs:
         VERSION=$(jq -r '.version' package.json)
         echo "version=$VERSION" >> $GITHUB_ENV
 
-    - name: Create and push tag
+    - name: Conditionally Create and Push Tag
+      if: ${{ github.event.inputs.create_tag == 'true' }}
       id: create_tag
       uses: mathieudutour/github-tag-action@v6.0
       with:
@@ -50,7 +67,8 @@ jobs:
         tag_prefix: "v"
         create_annotated_tag: true
 
-    - name: Create GitHub Release
+    - name: Conditionally Create GitHub Release
+      if: ${{ github.event.inputs.create_tag == 'true' }}
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -61,8 +79,32 @@ jobs:
         draft: false
         prerelease: false
 
+    - name: Create GitHub Deployment
+      if: ${{ github.event.inputs.deploy == 'true' }}
+      id: create_deployment
+      uses: octokit/request-action@v2.x
+      with:
+        route: POST /repos/${{ github.repository }}/deployments
+        ref: ${{ github.event.inputs.commit_id || github.sha }}
+        environment: Test_DEV
+        description: 'Deployment initiated by GitHub Actions'
+        auto_merge: false
+        required_contexts: []
+
     - name: Deploy to Production
+      if: ${{ github.event.inputs.deploy == 'true' }}
       run: |
         echo "Deploying to production..."
         # Add your actual deployment steps here
+        echo "Deployment command executed successfully"
         echo "Application deployed!"
+
+    - name: Update GitHub Deployment Status
+      if: ${{ github.event.inputs.deploy == 'true' }}
+      uses: octokit/request-action@v2.x
+      with:
+        route: POST /repos/${{ github.repository }}/deployments/${{ steps.create_deployment.outputs.deployment_id }}/statuses
+        state: success
+        environment_url: 'https://your-app-url.com' # Replace with your app URL
+        log_url: ${{ github.run_url }}
+        description: 'Deployment completed successfully'
